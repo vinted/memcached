@@ -1,17 +1,10 @@
-module Memcached
+class Memcached
   module MarshalCodec
-    FLAG = Memcached::Client::FLAG_ENCODED
-
-    def self.encode(key, value, flags)
-      [ Marshal.dump(value), flags | FLAG ]
-    end
-
-    def self.decode(key, value, flags)
-      if (flags & FLAG) != 0
-        Marshal.load(value)
-      else
-        value
+      def self.encode(key, value, flags)
+        [Marshal.dump(value), flags]
       end
-    end
+      def self.decode(key, value, flags)
+        Marshal.load(value)
+      end
   end
 end

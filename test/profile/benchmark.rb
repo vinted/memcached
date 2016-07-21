@@ -1,6 +1,8 @@
+Bundler.require(:benchmark)
+
 HERE = File.dirname(__FILE__)
 $LOAD_PATH << "#{HERE}/../../lib/"
-UNIX_SOCKET_NAME = File.join('/tmp', 'memcached')
+UNIX_SOCKET_NAME = File.join(ENV['TMPDIR']||'/tmp','memcached')
 JRUBY = defined?(JRUBY_VERSION)
 
 require 'ffi/times' if JRUBY
@@ -117,21 +119,21 @@ class Bench
 
     # Us
     @clients.merge!({
-      "libm:ascii" => Memcached::Client.new(
+      "libm:ascii" => Memcached::Rails.new(
         ['127.0.0.1:43042', '127.0.0.1:43043'],
-        :buffer_requests => false, :no_block => false, :prefix_key => "namespace"),
-      "libm:ascii:pipeline" => Memcached::Client.new(
+        :buffer_requests => false, :no_block => false, :namespace => "namespace"),
+      "libm:ascii:pipeline" => Memcached::Rails.new(
         ['127.0.0.1:43042', '127.0.0.1:43043'],
-        :no_block => true, :buffer_requests => true, :noreply => true, :prefix_key => "namespace"),
-      "libm:ascii:udp" => Memcached::Client.new(
+        :no_block => true, :buffer_requests => true, :noreply => true, :namespace => "namespace"),
+      "libm:ascii:udp" => Memcached::Rails.new(
         ["#{UNIX_SOCKET_NAME}0", "#{UNIX_SOCKET_NAME}1"],
-        :buffer_requests => false, :no_block => false, :prefix_key => "namespace"),
-      "libm:bin" => Memcached::Client.new(
+        :buffer_requests => false, :no_block => false, :namespace => "namespace"),
+      "libm:bin" => Memcached::Rails.new(
         ['127.0.0.1:43042', '127.0.0.1:43043'],
-        :buffer_requests => false, :no_block => false, :prefix_key => "namespace", :binary_protocol => true),
-      "libm:bin:buffer" => Memcached::Client.new(
+        :buffer_requests => false, :no_block => false, :namespace => "namespace", :binary_protocol => true),
+      "libm:bin:buffer" => Memcached::Rails.new(
         ['127.0.0.1:43042', '127.0.0.1:43043'],
-        :no_block => true, :buffer_requests => true, :prefix_key => "namespace", :binary_protocol => true)})
+        :no_block => true, :buffer_requests => true, :namespace => "namespace", :binary_protocol => true)})
   end
 
   def benchmark_clients(test_name, populate_keys = true)
@@ -144,9 +146,9 @@ class Bench
       client = @clients[client_name]
       begin
         if populate_keys
-          client.set @k1, @m_value
-          client.set @k2, @m_value
-          client.set @k3, @m_value
+          client.set @k1, @m_value, 0, true
+          client.set @k2, @m_value, 0, true
+          client.set @k3, @m_value, 0, true
         else
           client.delete @k1
           client.delete @k2
@@ -164,7 +166,6 @@ class Bench
           prof.print(:path => 'profiles', :profile => "#{test_name}-#{client_name.gsub(':','-')}")
         end
       rescue Exception => e
-        # FIXME: stop swallowing errors
         puts "#{test_name}: #{client_name} => #{e.inspect}" if ENV["DEBUG"]
         reset_clients
       end
@@ -184,19 +185,19 @@ class Bench
 
   def run_without_recursion
     benchmark_clients("set") do |c|
-      c.set @k1, @m_value
-      c.set @k2, @m_value
-      c.set @k3, @m_value
+      c.set @k1, @m_value, 0, true
+      c.set @k2, @m_value, 0, true
+      c.set @k3, @m_value, 0, true
     end
 
     benchmark_clients("get") do |c|
-      c.get @k1
-      c.get @k2
-      c.get @k3
+      c.get @k1, true
+      c.get @k2, true
+      c.get @k3, true
     end
 
     benchmark_clients("get-multi") do |c|
-      c.get_multi @keys
+      c.get_multi @keys, true
     end
 
     benchmark_clients("append") do |c|
@@ -248,28 +249,27 @@ class Bench
     end
 
     benchmark_clients("set-large") do |c|
-      c.set @k1, @m_large_value
-      c.set @k2, @m_large_value
-      c.set @k3, @m_large_value
+      c.set @k1, @m_large_value, 0, true
+      c.set @k2, @m_large_value, 0, true
+      c.set @k3, @m_large_value, 0, true
     end
 
     benchmark_clients("get-large") do |c|
-      c.get @k1
-      c.get @k2
-      c.get @k3
+      c.get @k1, true
+      c.get @k2, true
+      c.get @k3, true
     end
 
-## TODO: benchmark this in another file
-#    if defined?(Memcached) && !ENV['TEST'] && !ENV['CLIENT']
-#      benchmark_hashes(Memcached::HASH_VALUES, "hash") do |i|
-#        Rlibmemcached.memcached_generate_hash_rvalue(@k1, i)
-#        Rlibmemcached.memcached_generate_hash_rvalue(@k2, i)
-#        Rlibmemcached.memcached_generate_hash_rvalue(@k3, i)
-#        Rlibmemcached.memcached_generate_hash_rvalue(@k4, i)
-#        Rlibmemcached.memcached_generate_hash_rvalue(@k5, i)
-#        Rlibmemcached.memcached_generate_hash_rvalue(@k6, i)
-#      end
-#    end
+    if defined?(Memcached) && !ENV['TEST'] && !ENV['CLIENT']
+      benchmark_hashes(Memcached::HASH_VALUES, "hash") do |i|
+        Rlibmemcached.memcached_generate_hash_rvalue(@k1, i)
+        Rlibmemcached.memcached_generate_hash_rvalue(@k2, i)
+        Rlibmemcached.memcached_generate_hash_rvalue(@k3, i)
+        Rlibmemcached.memcached_generate_hash_rvalue(@k4, i)
+        Rlibmemcached.memcached_generate_hash_rvalue(@k5, i)
+        Rlibmemcached.memcached_generate_hash_rvalue(@k6, i)
+      end
+    end
   end
 end
 

@@ -1,6 +1,6 @@
 require File.expand_path("#{File.dirname(__FILE__)}/../test_helper")
 
-class MemcachedExperimentalTest # TODO
+class MemcachedExperimentalTest < Test::Unit::TestCase
 
   def setup
     @servers = ['localhost:43042', 'localhost:43043', "#{UNIX_SOCKET_NAME}0"]
@@ -89,7 +89,7 @@ class MemcachedExperimentalTest # TODO
       value = "Test that we cannot get 0 bytes with a get_len call."
       @experimental_cache.set key, value, 0, false
       assert_raises(Memcached::Failure) do
-        @experimental_cache.get_len 0, key
+        result = @experimental_cache.get_len 0, key
       end
     end
   end
@@ -119,7 +119,7 @@ class MemcachedExperimentalTest # TODO
     server_get_len_capable do
       @experimental_binary_protocol_cache.set key, @value
       assert_raises(Memcached::ActionNotSupported) do
-        @experimental_binary_protocol_cache.get_len 2, key
+        result = @experimental_binary_protocol_cache.get_len 2, key
       end
     end
   end
@@ -173,7 +173,7 @@ class MemcachedExperimentalTest # TODO
       @experimental_binary_protocol_cache.set key_1, value_1, 0, false
       @experimental_binary_protocol_cache.set key_2, value_2, 0, false
       assert_raises(Memcached::ActionNotSupported) do
-        @experimental_binary_protocol_cache.get_len 2, keys
+        result = @experimental_binary_protocol_cache.get_len 2, keys
       end
     end
   end
@@ -191,9 +191,9 @@ class MemcachedExperimentalTest # TODO
 
   def test_get_len_failure
     server_get_len_capable do
-      # Test that we cannot use get_len without setting the :experimental_features config
+      value = "Test that we cannot use get_len without setting the :experimental_features config."
       assert_raises(NoMethodError) do
-        @cache.get_len 10, key
+        result = @cache.get_len 10, key
       end
     end
   end
@@ -204,6 +204,45 @@ class MemcachedExperimentalTest # TODO
       @experimental_cas_cache.set(key, "foo_bar", 0, false)
       assert_equal "foo", @experimental_cas_cache.get_len(3, key)
       assert_equal "foo_bar", @experimental_cas_cache.get_len(7, key)
+    end
+  end
+
+  # Touch command
+
+  def test_touch_capability
+    server_touch_capable do
+      @experimental_binary_protocol_cache.set(key, "value", 10)
+      assert_nothing_raised do
+        @experimental_binary_protocol_cache.touch(key, 20)
+      end
+      assert_raises(Memcached::ActionNotSupported) do
+        @experimental_cache.touch(key, 10)
+      end
+    end
+  end
+
+  def test_touch_missing_key
+    server_touch_capable do
+      @experimental_binary_protocol_cache.delete key rescue nil
+      assert_raises(Memcached::NotFound) do
+        @experimental_binary_protocol_cache.touch(key, 10)
+      end
+    end
+  end
+
+  def test_touch
+    server_touch_capable do
+      @experimental_binary_protocol_cache.set key, @value, 2
+      assert_equal @value, @experimental_binary_protocol_cache.get(key)
+      sleep(1)
+      assert_equal @value, @experimental_binary_protocol_cache.get(key)
+      @experimental_binary_protocol_cache.touch(key, 3)
+      sleep(2)
+      assert_equal @value, @experimental_binary_protocol_cache.get(key)
+      sleep(2)
+      assert_raises(Memcached::NotFound) do
+        @experimental_binary_protocol_cache.get(key)
+      end
     end
   end
 
