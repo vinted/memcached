@@ -49,9 +49,13 @@ static memcached_return io_wait(memcached_server_st *ptr,
   error= poll(fds, 1, ptr->root->poll_timeout);
 
   if (error == 1)
+  {
+    printf("IO WAIT SUCCESS\n");
     return MEMCACHED_SUCCESS;
+  }
   else if (error == 0)
   {
+    printf("IO WAIT FAIL\n");
     return MEMCACHED_TIMEOUT;
   }
 
@@ -315,6 +319,11 @@ memcached_server_st *memcached_io_get_readable_server(memcached_st *memc)
                y;
   int err;
 
+  printf("Getting readable server...\n");
+  printf("Number of hosts: %d\n", memc->number_of_hosts);
+  printf("Max servers to poll: %d\n", MAX_SERVERS_TO_POLL);
+
+
   for (x= 0;
        x< memc->number_of_hosts && host_index < MAX_SERVERS_TO_POLL;
        ++x)
@@ -334,6 +343,7 @@ memcached_server_st *memcached_io_get_readable_server(memcached_st *memc)
   if (host_index < 2)
   {
     /* We have 0 or 1 server with pending events.. */
+    printf("We have 0 or 1 server with pending events\n\n");
     for (x= 0; x< memc->number_of_hosts; ++x)
       if (memcached_server_response_count(&memc->hosts[x]) > 0)
         return &memc->hosts[x];
@@ -341,19 +351,25 @@ memcached_server_st *memcached_io_get_readable_server(memcached_st *memc)
     return NULL;
   }
 
+  printf("Polling a server with %d\n", memc->poll_timeout);
+
   err= poll(fds, host_index, memc->poll_timeout);
   switch (err) {
   case -1:
     memc->cached_errno = errno;
     /* FALLTHROUGH */
   case 0:
+    printf("Error polling server\n\n");
     break;
   default:
     for (x= 0; x < host_index; ++x)
       if (fds[x].revents & POLLIN)
         for (y= 0; y < memc->number_of_hosts; ++y)
           if (memc->hosts[y].fd == fds[x].fd)
+          {
+            printf("Found some server\n\n");
             return &memc->hosts[y];
+          }
   }
 
   return NULL;
