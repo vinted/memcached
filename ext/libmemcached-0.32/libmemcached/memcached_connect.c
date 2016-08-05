@@ -176,6 +176,8 @@ static memcached_return unix_socket_connect(memcached_server_st *ptr)
 
     addrlen= (socklen_t) (strlen(servAddr.sun_path) + sizeof(servAddr.sun_family));
 
+    (void)set_socket_options(ptr);
+
 test_connect:
     if (connect(ptr->fd,
                 (struct sockaddr *)&servAddr,

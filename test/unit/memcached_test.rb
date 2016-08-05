@@ -313,6 +313,26 @@ class MemcachedTest < Test::Unit::TestCase
     socket.close
   end
 
+  def test_get_with_unix_server_timeout
+    socket, socket_name = stub_unix_socket_server(1)
+
+    cache = Memcached.new(socket_name, :timeout => 0.5, :exception_retry_limit => 0)
+    assert 0.49 < (Benchmark.measure do
+      assert_raise(Memcached::ATimeoutOccurred) do
+        result = cache.get key
+      end
+    end).real
+
+    cache = Memcached.new(socket_name, :poll_timeout => 0.25, :rcv_timeout => 0.25, :exception_retry_limit => 0)
+    assert 0.51 > (Benchmark.measure do
+      assert_raise(Memcached::ATimeoutOccurred) do
+        result = cache.get key
+      end
+    end).real
+  ensure
+    socket.close
+  end
+
   def test_get_with_no_block_server_timeout
     socket = stub_server 43048
     cache = Memcached.new("localhost:43048:1", :no_block => true, :timeout => 0.25, :exception_retry_limit => 0)
@@ -340,6 +360,37 @@ class MemcachedTest < Test::Unit::TestCase
       end
     end).real
 
+  ensure
+    socket.close
+  end
+
+  def test_get_with_no_block_unix_server_timeout
+    socket, socket_name = stub_unix_socket_server(2)
+
+    cache = Memcached.new(socket_name, :no_block => true, :timeout => 0.25, :exception_retry_limit => 0)
+    assert 0.24 < (Benchmark.measure do
+      assert_raise(Memcached::ATimeoutOccurred) do
+        result = cache.get key
+      end
+    end).real
+
+    cache = Memcached.new(socket_name, :no_block => true, :poll_timeout => 0.25, :rcv_timeout => 0.001, :exception_retry_limit => 0)
+    assert 0.24 < (Benchmark.measure do
+      assert_raise(Memcached::ATimeoutOccurred) do
+        result = cache.get key
+      end
+    end).real
+
+    cache = Memcached.new(socket_name, :no_block => true,
+      :poll_timeout => 0.001,
+      :rcv_timeout => 0.25, # No affect in no-block mode
+      :exception_retry_limit => 0
+    )
+    assert 0.24 > (Benchmark.measure do
+      assert_raise(Memcached::ATimeoutOccurred) do
+        result = cache.get key
+      end
+    end).real
   ensure
     socket.close
   end
@@ -1484,4 +1535,12 @@ class MemcachedTest < Test::Unit::TestCase
     socket
   end
 
+  def stub_unix_socket_server(socket_number)
+    socket_name = "/tmp/memcached_socket_test_#{socket_number}"
+    socket = UNIXServer.new(socket_name)
+
+    Thread.new { socket.accept }
+
+    [socket, socket_name]
+  end
 end
