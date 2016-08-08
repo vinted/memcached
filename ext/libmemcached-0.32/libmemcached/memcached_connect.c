@@ -46,16 +46,12 @@ static memcached_return set_hostinfo(memcached_server_st *server)
 
 static memcached_return set_socket_options(memcached_server_st *ptr)
 {
-  printf("Setting socket options\n");
-
   WATCHPOINT_ASSERT(ptr->fd != -1);
 
   if (ptr->type == MEMCACHED_CONNECTION_UDP)
     return MEMCACHED_SUCCESS;
 
 #ifdef HAVE_SNDTIMEO
-  printf("SND timeout is present\n");
-
   if (ptr->root->snd_timeout)
   {
     int error;
@@ -69,9 +65,7 @@ static memcached_return set_socket_options(memcached_server_st *ptr)
         waittime.tv_usec= ptr->root->snd_timeout;
     }
 
-    printf("SND: %d %d\n", waittime.tv_sec, waittime.tv_usec);
-
-    error= setsockopt(ptr->fd, SOL_SOCKET, SO_SNDTIMEO,
+    error= setsockopt(ptr->fd, SOL_SOCKET, SO_SNDTIMEO, 
                       &waittime, (socklen_t)sizeof(struct timeval));
     WATCHPOINT_ASSERT(error == 0);
   }
@@ -91,7 +85,7 @@ static memcached_return set_socket_options(memcached_server_st *ptr)
         waittime.tv_usec= ptr->root->rcv_timeout;
     }
 
-    error= setsockopt(ptr->fd, SOL_SOCKET, SO_RCVTIMEO,
+    error= setsockopt(ptr->fd, SOL_SOCKET, SO_RCVTIMEO, 
                       &waittime, (socklen_t)sizeof(struct timeval));
     WATCHPOINT_ASSERT(error == 0);
   }
@@ -102,9 +96,9 @@ static memcached_return set_socket_options(memcached_server_st *ptr)
     int error;
     struct linger linger;
 
-    linger.l_onoff= 1;
-    linger.l_linger= 0; /* By default on close() just drop the socket */
-    error= setsockopt(ptr->fd, SOL_SOCKET, SO_LINGER,
+    linger.l_onoff= 1; 
+    linger.l_linger= 0; /* By default on close() just drop the socket */ 
+    error= setsockopt(ptr->fd, SOL_SOCKET, SO_LINGER, 
                       &linger, (socklen_t)sizeof(struct linger));
     WATCHPOINT_ASSERT(error == 0);
   }
@@ -114,7 +108,7 @@ static memcached_return set_socket_options(memcached_server_st *ptr)
     int flag= 1;
     int error;
 
-    error= setsockopt(ptr->fd, IPPROTO_TCP, TCP_NODELAY,
+    error= setsockopt(ptr->fd, IPPROTO_TCP, TCP_NODELAY, 
                       &flag, (socklen_t)sizeof(int));
     WATCHPOINT_ASSERT(error == 0);
   }
@@ -123,7 +117,7 @@ static memcached_return set_socket_options(memcached_server_st *ptr)
   {
     int error;
 
-    error= setsockopt(ptr->fd, SOL_SOCKET, SO_SNDBUF,
+    error= setsockopt(ptr->fd, SOL_SOCKET, SO_SNDBUF, 
                       &ptr->root->send_size, (socklen_t)sizeof(int));
     WATCHPOINT_ASSERT(error == 0);
   }
@@ -132,7 +126,7 @@ static memcached_return set_socket_options(memcached_server_st *ptr)
   {
     int error;
 
-    error= setsockopt(ptr->fd, SOL_SOCKET, SO_RCVBUF,
+    error= setsockopt(ptr->fd, SOL_SOCKET, SO_RCVBUF, 
                       &ptr->root->recv_size, (socklen_t)sizeof(int));
     WATCHPOINT_ASSERT(error == 0);
   }
@@ -157,16 +151,11 @@ static memcached_return unix_socket_connect(memcached_server_st *ptr)
   struct sockaddr_un servAddr;
   socklen_t addrlen;
 
-  printf("Trying unix_socket_connect\n");
-
   if (ptr->fd == -1)
   {
     if ((ptr->fd= socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
     {
       ptr->cached_errno= errno;
-
-      printf("Socket creation failure\n\n");
-
       return MEMCACHED_CONNECTION_SOCKET_CREATE_FAILURE;
     }
 
@@ -179,12 +168,10 @@ static memcached_return unix_socket_connect(memcached_server_st *ptr)
     (void)set_socket_options(ptr);
 
 test_connect:
-    if (connect(ptr->fd,
+    if (connect(ptr->fd, 
                 (struct sockaddr *)&servAddr,
                 sizeof(servAddr)) < 0)
     {
-      printf("Possibly an error on connecting (or connection in progress)\n");
-
       switch (errno)
       {
       case EINPROGRESS:
@@ -196,25 +183,17 @@ test_connect:
       default:
         WATCHPOINT_ERRNO(errno);
         ptr->cached_errno= errno;
-
-        printf("Unix socket connection error\n\n");
-
         return MEMCACHED_ERRNO;
       }
     }
   }
 
   WATCHPOINT_ASSERT(ptr->fd != -1);
-
-  printf("Unix socket connection successful\n\n");
-
   return MEMCACHED_SUCCESS;
 }
 
 static memcached_return network_connect(memcached_server_st *ptr)
 {
-  printf("Trying network_connect\n");
-
   if (ptr->fd == -1)
   {
     struct addrinfo *use;
@@ -241,15 +220,12 @@ static memcached_return network_connect(memcached_server_st *ptr)
         continue;
       }
 
-      if ((ptr->fd= socket(use->ai_family,
-                           use->ai_socktype,
+      if ((ptr->fd= socket(use->ai_family, 
+                           use->ai_socktype, 
                            use->ai_protocol)) < 0)
       {
         ptr->cached_errno= errno;
         WATCHPOINT_ERRNO(errno);
-
-        printf("Socket creation failure\n");
-
         return MEMCACHED_CONNECTION_SOCKET_CREATE_FAILURE;
       }
 
@@ -264,11 +240,9 @@ static memcached_return network_connect(memcached_server_st *ptr)
       }
 
       /* connect to server */
-      while (ptr->fd != -1 &&
+      while (ptr->fd != -1 && 
              connect(ptr->fd, use->ai_addr, use->ai_addrlen) < 0)
       {
-        printf("Connected!\n");
-        printf("Connect timeout used for poll(): %d\n", ptr->root->connect_timeout);
         ptr->cached_errno= errno;
         if (errno == EINPROGRESS || /* nonblocking mode - first return, */
             errno == EALREADY) /* nonblocking mode - subsequent returns */
@@ -293,17 +267,17 @@ static memcached_return network_connect(memcached_server_st *ptr)
             (void)close(ptr->fd);
             ptr->fd= -1;
           }
-        }
+        } 
         else if (errno == EISCONN) /* we are connected :-) */
         {
           break;
-        }
+        } 
         else if (errno != EINTR)
         {
           (void)close(ptr->fd);
           ptr->fd= -1;
           break;
-        }
+        } 
       }
 
 #ifdef LIBMEMCACHED_WITH_SASL_SUPPORT
@@ -322,13 +296,11 @@ static memcached_return network_connect(memcached_server_st *ptr)
 
       if (ptr->fd != -1)
       {
-        /* restore flags */
-        if (ptr->root->connect_timeout && (ptr->root->flags & MEM_NO_BLOCK) == 0)
+        /* restore flags */ 
+        if (ptr->root->connect_timeout && (ptr->root->flags & MEM_NO_BLOCK) == 0) 
           (void)fcntl(ptr->fd, F_SETFL, flags & ~O_NONBLOCK);
 
         WATCHPOINT_ASSERT(ptr->cursor_active == 0);
-
-        printf("Successfully connected\n\n");
         return MEMCACHED_SUCCESS;
       }
       use = use->ai_next;
@@ -338,16 +310,11 @@ static memcached_return network_connect(memcached_server_st *ptr)
   if (ptr->fd == -1)
   {
     ptr->server_failure_counter ++;
-    if (ptr->cached_errno == 0) {
-      printf("Timeout error\n\n");
+    if (ptr->cached_errno == 0)
       return MEMCACHED_TIMEOUT;
-    }
-
-    printf("Unknown error\n\n");
+      
     return MEMCACHED_ERRNO; /* The last error should be from connect() */
   }
-
-  printf("Successully connected\n\n");
 
   return MEMCACHED_SUCCESS; /* The last error should be from connect() */
 }
