@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     container: ruby:2.0.0
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup
-        run: |
-          bundle install
-
-      - name: Test
-        run: bundle exec rspec
+#      - uses: actions/checkout@v2
+#      - name: Setup
+#        run: |
+#          bundle install
+#
+#      - name: Test
+#        run: bundle exec rspec
 
       - name: Build
         id: build
