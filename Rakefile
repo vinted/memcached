@@ -1,7 +1,5 @@
 require 'echoe'
 
-ENV["GEM_CERTIFICATE_CHAIN"]="memcached.pem"
-
 Echoe.new("memcached") do |p|
   p.author = "Evan Weaver"
   p.project = "evan"
@@ -131,4 +129,9 @@ def run(cmd, reason)
   puts reason
   puts cmd
   raise "'#{cmd}' failed" unless system(cmd)
+end
+
+task :version do |t|
+  require 'memcached/version'
+  puts Memcached::VERSION
 end

@@ -193,8 +193,8 @@ lib/memcached/experimental.rb
 lib/memcached/marshal_codec.rb
 lib/memcached/memcached.rb
 lib/memcached/rails.rb
+lib/memcached/version.rb
 memcached.gemspec
-memcached.pem
 test/profile/benchmark.rb
 test/profile/c_profiler.rb
 test/profile/exercise.rb
