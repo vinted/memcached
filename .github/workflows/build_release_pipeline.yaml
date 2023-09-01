@@ -16,12 +16,6 @@ jobs:
           ruby-version: 2.7.2
           rubygems: 3.1.4
           bundler-cache: true
-#      - name: Setup
-#        run: |
-#          bundle install
-#
-#      - name: Test
-#        run: bundle exec rspec
 
       - name: Build
         id: build
