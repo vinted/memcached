@@ -132,5 +132,6 @@ def run(cmd, reason)
 end
 
 task :version do |t|
+  require 'memcached/version'
   puts Memcached::VERSION
 end
