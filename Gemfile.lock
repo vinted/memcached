@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    vinted-memcached (1.8.0)
+    vinted-memcached (1.8.1)
 
 GEM
   remote: https://rubygems.org/
