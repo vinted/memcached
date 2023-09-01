@@ -1,3 +1,5 @@
+v1.8.3. Fix gemspec.
+
 v1.8.2. Empty update.
 
 v1.8.1. Fix memcached bug: https://bugs.launchpad.net/libmemcached/+bug/442914
