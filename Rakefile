@@ -1,7 +1,5 @@
 require 'echoe'
 
-# ENV["GEM_CERTIFICATE_CHAIN"]="memcached.pem"
-
 Echoe.new("memcached") do |p|
   p.author = "Evan Weaver"
   p.project = "evan"

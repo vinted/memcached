@@ -48,4 +48,3 @@ jobs:
               ref: "refs/tags/${{ steps.build.outputs.gem_version }}",
               sha: context.sha
             })
-            
