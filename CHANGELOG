@@ -1,3 +1,5 @@
+v1.8.2. Empty update.
+
 v1.8.1. Fix memcached bug: https://bugs.launchpad.net/libmemcached/+bug/442914
 
 v1.8.0. Add support for multi-entry CAS (fbogsany).
