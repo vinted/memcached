@@ -1,0 +1,53 @@
+name: Build and release ruby gem
+
+on:
+  pull_request:
+    branches: [ 1-0-stable ]
+  push:
+  workflow_dispatch:
+
+jobs:
+  build-release-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo apt-get update
+          sudo apt-get -y install memcached libsasl2-dev
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+          bundler-cache: true
+
+      - run: bundle exec ruby test/setup.rb
+      - run: bundle exec rake
+      - name: Build
+        id: build
+        if: success()
+        run: |
+          bundle exec rake build
+          echo "::set-output name=gem_version::v$(bundle exec rake version)"
+
+      - name: Release
+        if: success() && github.ref == 'refs/heads/1-0-stable'
+        run: |
+          mkdir -p $HOME/.gem
+          touch $HOME/.gem/credentials
+          chmod 600 $HOME/.gem/credentials
+          printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
+          gem push pkg/vinted-memcached-*.gem -V
+        env:
+          GEM_HOST_API_KEY: "${{ secrets.RUBYGEMS_AUTH_TOKEN }}"
+
+      - name: Tag repo with new gem version
+        if: success() && github.ref == 'refs/heads/1-0-stable'
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            github.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: "refs/tags/${{ steps.build.outputs.gem_version }}",
+              sha: context.sha
+            })
