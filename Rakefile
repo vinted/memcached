@@ -58,3 +58,8 @@ def run(cmd, reason)
   puts cmd
   raise "'#{cmd}' failed" unless system(cmd)
 end
+
+task :version do
+  require 'memcached/version'
+  puts Memcached::VERSION
+end

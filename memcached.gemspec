@@ -1,8 +1,10 @@
 # -*- encoding: utf-8 -*-
 
+require_relative 'lib/memcached/version'
+
 Gem::Specification.new do |s|
-  s.name = "memcached"
-  s.version = "1.9.0"
+  s.name = "vinted-memcached"
+  s.version = Memcached::VERSION
 
   s.authors = ["Arthur Neves", "Evan Weaver"]
   s.email = "arthurnn@gmail.com"
