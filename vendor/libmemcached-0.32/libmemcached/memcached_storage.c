@@ -146,7 +146,7 @@ static inline memcached_return memcached_send(memcached_st *ptr,
     return MEMCACHED_WRITE_FAILURE;
 
   if ((ptr->flags & MEM_BUFFER_REQUESTS) &&
-      (verb == SET_OP || verb == PREPEND_OP || verb == APPEND_OP || verb == DELETE_OP))
+      (verb == SET_OP || verb == PREPEND_OP || verb == APPEND_OP))
     to_write= 0;
   else
     to_write= 1;
