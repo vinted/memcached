@@ -106,11 +106,11 @@ static inline memcached_return memcached_send(memcached_st *ptr,
   {
     if (verb == DELETE_OP) {
       write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                      "%s%s%.*s %s",
+                                      "%s%s%.*s%s",
                                       storage_op_string(verb),
                                       ptr->prefix_key,
                                       (int)key_length, key,
-                                      (ptr->flags & MEM_NOREPLY) ? "noreply" : "");
+                                      (ptr->flags & MEM_NOREPLY) ? " noreply" : "");
     }
     else
     {
