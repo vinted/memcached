@@ -106,19 +106,19 @@ static inline memcached_return memcached_send(memcached_st *ptr,
   {
     if (verb == DELETE_OP) {
       write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                      "%s%s%.*s%s\r\n",
+                                      "%s%s%s %s",
                                       storage_op_string(verb),
                                       ptr->prefix_key,
-                                      (int)key_length, key,
-                                      (ptr->flags & MEM_NOREPLY) ? " noreply" : "");
+                                      key,
+                                      (ptr->flags & MEM_NOREPLY) ? "noreply" : "");
     }
     else
     {
       write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                      "%s%s%.*s %u %llu %zu%s\r\n",
+                                      "%s%s%s %u %llu %zu%s\r\n",
                                       storage_op_string(verb),
                                       ptr->prefix_key,
-                                      (int)key_length, key, flags,
+                                      key, flags,
                                       (unsigned long long)expiration, value_length,
                                       (ptr->flags & MEM_NOREPLY) ? " noreply" : "");
     }
@@ -146,7 +146,7 @@ static inline memcached_return memcached_send(memcached_st *ptr,
     return MEMCACHED_WRITE_FAILURE;
 
   if ((ptr->flags & MEM_BUFFER_REQUESTS) &&
-      (verb == SET_OP || verb == PREPEND_OP || verb == APPEND_OP))
+      (verb == SET_OP || verb == PREPEND_OP || verb == APPEND_OP || verb == DELETE_OP))
     to_write= 0;
   else
     to_write= 1;
